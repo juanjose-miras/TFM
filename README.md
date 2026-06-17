@@ -1,2 +1,2 @@
-## funciona nene
 # TFM
+### Conexion mac y win
