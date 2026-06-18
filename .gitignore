@@ -1,1 +1,2 @@
-**/.env
+# Ignorar las variables e entorno
+.env.txt
