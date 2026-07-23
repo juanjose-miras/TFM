@@ -1,2 +1,8 @@
-# Ignorar las variables e entorno
+# Ignorar las variables de entorno (Contraseñas)
 .env.txt
+
+# Ignorar el entorno virtual
+.venv/
+
+# Ignorar archivos residuales de Mac
+.DS_Store
