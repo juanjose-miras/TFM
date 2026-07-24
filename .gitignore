@@ -6,3 +6,14 @@
 
 # Ignorar archivos residuales de Mac
 .DS_Store
+
+
+# Ignoramos absolutamente TODO el contenido de estas carpetas y mantenemos los archivos .gitkeep
+etl/data/ArchivosProcesados/*
+etl/data/ArchivosSinProcesar/*
+!etl/data/ArchivosProcesados/.gitkeep
+!etl/data/ArchivosSinProcesar/.gitkeep
+
+# Ignorar cualquier archivo de datos suelto por error
+*.csv
+*.xlsx
