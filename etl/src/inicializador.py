@@ -1,3 +1,4 @@
+from functions.FunctionsFileProcessing import process_txt_csv, process_xlsx_csv
 import pandas as pd
 import numpy as np
 import os
@@ -5,64 +6,65 @@ import shutil
 import glob
 
 # --- 1. CONFIGURACIÓN DE CARPETAS ---
-carpeta_entrada = "1_Datos_SABI_Brutos"
-carpeta_salida = "2_Resultados_Limpios"
-carpeta_procesados = "3_Procesados_Archivo"
 
-# Python crea las carpetas automáticamente si no existen
-for carpeta in [carpeta_entrada, carpeta_salida, carpeta_procesados]:
-    if not os.path.exists(carpeta):
-        os.makedirs(carpeta)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+output_folder = os.path.normpath(os.path.join(BASE_DIR, "..", "data", "clean_files"))
+input_folder = os.path.normpath(os.path.join(BASE_DIR, "..", "data", "unprocessed_files"))
+save_folder = os.path.normpath(os.path.join(BASE_DIR, "..", "data", "processed_files"))
+
+'''
+output_folder = "../data/clean_files"
+input_folder = "../data/unprocessed_files"
+save_folder = "../data/processed_files"
+'''
+
+os.makedirs(output_folder, exist_ok=True)
+os.makedirs(input_folder, exist_ok=True)
+os.makedirs(save_folder, exist_ok=True)
 
 # --- 2. BUSCAR ARCHIVOS ---
-# Buscamos todos los archivos que terminen en .csv en la carpeta de entrada
-archivos_pendientes = glob.glob(f"{carpeta_entrada}/*.csv")
+# Buscamos todos los archivos que terminen en .txt y .xlsx en la carpeta de entrada
+files_xlsx_csv = [
+    f for ext in ('xlsx', 'txt') 
+    for f in glob.glob(f"{input_folder}/*.{ext}")
+    if not os.path.basename(f).startswith('~')]
 
-if not archivos_pendientes:
-    print(f"🤷‍♂️ No hay archivos nuevos en la carpeta '{carpeta_entrada}'.")
+pending_files = [
+    path for path in files_xlsx_csv
+    if not os.path.exists(os.path.join(save_folder, os.path.basename(path)))
+]
+
+if not pending_files:
+    print(f"No hay archivos nuevos en la carpeta '{os.path.basename(input_folder)}'.")
 else:
-    print(f"🚀 Se han encontrado {len(archivos_pendientes)} archivo(s). Iniciando ETL...")
+    print(f"Se han encontrado {len(pending_files)} archivo(s). Iniciando ETL...")
 
     # --- 3. PROCESAR CADA ARCHIVO ---
-    for ruta_archivo in archivos_pendientes:
-        nombre_archivo = os.path.basename(ruta_archivo)
-        print(f"\n🔄 Procesando: {nombre_archivo}...")
+    for file_path in pending_files:
+        file_name = os.path.basename(file_path)
+        extension = file_path.split('.')[-1].lower()
+        print(f"\nProcesando: {file_name}...")
 
         try:
-            # === AQUÍ EMPIEZA TU ETL ===
-            # Extracción
-            df = pd.read_csv(ruta_archivo, sep=";", index_col=0)
+            if extension == 'xlsx':
+                df = process_xlsx_csv(file_path)
+                save_clean_file = file_path.replace("unprocessed_files", "clean_files").replace(".xlsx", "_clean.csv")
 
-            # Transformación
-            df = df.drop(columns=['Código consolidación', 'País'])
-            df['Ultimo año disponible'] = pd.to_datetime(df['Ultimo año disponible'], format='%d/%m/%Y').dt.year
-            df = df.rename(columns={
-                'Nombre': 'Comp_Name',
-                'Código NIF': 'Cod_NIF',
-                'Localidad': 'City',
-                'Ultimo año disponible': 'Last_year',
-                'Ingresos de explotación\nmil EUR\nÚlt. año disp.': 'Earnings_mil_last_year'
-            })
-            
-            df['Earnings_mil_last_year'] = df['Earnings_mil_last_year'].str.replace('.', '', regex=False)
-            df['Earnings_mil_last_year'] = pd.to_numeric(df['Earnings_mil_last_year'], errors='coerce')
-            df['City'] = df['City'].str.strip()
-            df['Comp_Name'] = df['Comp_Name'].str.strip()
-            df = df.drop_duplicates(subset=['Cod_NIF'])
-            # === AQUÍ TERMINA TU ETL ===
+            elif extension == 'txt':
+                df = process_txt_csv(file_path)
+                save_clean_file = file_path.replace("unprocessed_files", "clean_files").replace(".txt", "_clean.csv")
 
-            # Carga (Guardar el archivo limpio)
-            ruta_guardado = os.path.join(carpeta_salida, f"Limpio_{nombre_archivo}")
-            df.to_csv(ruta_guardado, index=False, sep=";", encoding="utf-8-sig")
+            # Guardamos el archivo procesado 
+            df.to_csv(save_clean_file, index=False, sep=";", encoding="utf-8-sig")
 
-            # Mover el archivo original al archivo de procesados para no repetirlo
-            ruta_archivo_viejo = os.path.join(carpeta_procesados, nombre_archivo)
-            shutil.move(ruta_archivo, ruta_archivo_viejo)
+            # Hacemos una copia del archivo original en archivos procesados
+            shutil.copy2(file_path, os.path.join(save_folder, file_name))
 
-            print(f"✅ ÉXITO: Archivo limpiado y movido a procesados.")
+            print(f"Archivo {file_name} procesado")
 
         except Exception as e:
             # Si un archivo está corrupto, nos avisa pero sigue con los demás
-            print(f"❌ ERROR con {nombre_archivo}: {e}")
+            print(f"ERROR con {file_name}: {e}")
 
-    print("\n🎉 ¡Todos los archivos han sido procesados!")
+    print("\n¡Todos los archivos han sido procesados!")

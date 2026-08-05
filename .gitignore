@@ -1,5 +1,6 @@
 # Ignorar las variables de entorno (Contraseñas)
 .env.txt
+.env
 
 # Ignorar el entorno virtual
 .venv/
@@ -9,10 +10,12 @@
 
 
 # Ignoramos absolutamente TODO el contenido de estas carpetas y mantenemos los archivos .gitkeep
-etl/data/ArchivosProcesados/*
-etl/data/ArchivosSinProcesar/*
-!etl/data/ArchivosProcesados/.gitkeep
-!etl/data/ArchivosSinProcesar/.gitkeep
+etl/data/unprocessed_files/*
+etl/data/processed_files/*
+etl/data/clean_files/*
+!etl/data/unprocessed_files/.gitkeep
+!etl/data/processed_files/.gitkeep
+!etl/data/clean_files/.gitkeep
 
 # Ignorar cualquier archivo de datos suelto por error
 *.csv
