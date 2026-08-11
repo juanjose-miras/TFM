@@ -1,5 +1,6 @@
 import pandas as pd
 import re
+import os
 
 def process_txt_csv (file_path: str) -> pd.DataFrame:
 
@@ -8,7 +9,8 @@ def process_txt_csv (file_path: str) -> pd.DataFrame:
         file_path, sep=";", index_col=0, encoding="utf-16",
         dtype={
             'CNAE 2009 Primary Code': str,
-            'CNAE 2009 Secondary Code(s)': str
+            'CNAE 2009 Secondary Code(s)': str,
+            'Postal Code': str
         }
     )
 
@@ -42,6 +44,7 @@ def process_txt_csv (file_path: str) -> pd.DataFrame:
         df[col] = df[col].astype(str).str.strip()
 
     df = df.drop_duplicates(subset=['NIF_Code'])
+    df.columns = df.columns.str.lower()
         
     return df
 
@@ -125,6 +128,6 @@ def process_xlsx_csv(file_path: str) -> pd.DataFrame:
     df_final.columns = [re.sub(r'\s*\([^)]*\)', '', c).strip() for c in df_final.columns]
     df_final.columns = [c.replace('/', '_').replace(' ', '_') for c in df_final.columns]
     df_final.columns = [re.sub(r'_+', '_', c).strip('_') for c in df_final.columns]
+    df_final.columns = df_final.columns.str.lower()
 
     return df_final
-
