@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS info_empresas (
 
     company_name VARCHAR(255),
     address VARCHAR(255),
+    postal_code INTEGER, 
     city VARCHAR(100),
     province VARCHAR(100),
     cnae_primary_code VARCHAR(10),

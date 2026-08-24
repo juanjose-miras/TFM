@@ -14,11 +14,11 @@ def process_txt_csv (file_path: str) -> pd.DataFrame:
         }
     )
 
-    # 1. Cambia al formato fecha solo indicando el año
+    # Cambia al formato fecha solo indicando el año
     df['Last available year'] = pd.to_datetime(df['Last available year'], format='%d/%m/%Y', errors='coerce').dt.year
     df['Date of Establishment'] = pd.to_datetime(df['Date of Establishment'], format='%d/%m/%Y', errors='coerce').dt.year
 
-    # 2. Renombre de todas las columnas
+    # Renombre de todas las columnas
     df = df.rename(columns={
         'NIF Code': 'NIF_Code',
         'CNAE 2009 Primary Code': 'CNAE_primary_Code',
@@ -32,13 +32,13 @@ def process_txt_csv (file_path: str) -> pd.DataFrame:
     })
     df.columns = [c.replace(' ','_') for c in df.columns]
 
-    # 3. Limpieza de los valores nulos y adaptación del texto a numerico
+    # Limpieza de los valores nulos y adaptación del texto a numerico
     df['Earnings_mil_last_year'] = pd.to_numeric(df['Earnings_mil_last_year'], errors='coerce')
     df['N_emp'] = pd.to_numeric(df['N_emp'], errors='coerce')
     not_geocoded = (df['Longitude'] == 0) & (df['Latitude'] == 0)
     df.loc[not_geocoded, ['Longitude', 'Latitude']] = pd.NA
 
-    # 4. Limpieza de espacios y duplicados
+    # Limpieza de espacios y duplicados
     text_columns = df.select_dtypes(include=['object', 'str']).columns
     for col in text_columns:
         df[col] = df[col].astype(str).str.strip()
@@ -51,11 +51,10 @@ def process_txt_csv (file_path: str) -> pd.DataFrame:
 
 def process_xlsx_csv(file_path: str) -> pd.DataFrame:
 
-    # -- 1. Importación del archivo
+    # Importación del archivo
     df = pd.read_excel(file_path, index_col=0)
 
-    # -- 2. Obtiene todos los nombres de las variables financieras y de las variables
-    #       que estan representadas en miles
+    # Obtiene todos los nombres de las variables financieras y de las variables que estan representadas en miles
     metrics = list(dict.fromkeys([
         c.split('\n')[0] for c in df.columns if len(c.split('\n')) >= 3
     ]))
@@ -70,12 +69,12 @@ def process_xlsx_csv(file_path: str) -> pd.DataFrame:
     # Construye un patrón de búsqueda múltiple a partir de la lista de métricas.
     metrics_pattern = '|'.join(re.escape(m) for m in metrics)
 
-    # -- 3. Identifica las columnas relevantes
+    # Identifica las columnas relevantes
     metric_columns = [col for col in df.columns if re.search(metrics_pattern, col)]
 
-    # -- 4. Despivota los datos de métricas de la tabla (de columnas a filas): mantiene el NIF como
-    #        identificador fijo y transforma todas las columnas de métricas en una única columna
-    #        con su respectivo valor financiero.
+    # Despivota los datos de métricas de la tabla (de columnas a filas): mantiene el NIF como identificador 
+    # fijo y transforma todas las columnas de métricas en una única columna
+    # con su respectivo valor financiero.
     df_melt = pd.melt(
         df,
         id_vars=['NIF Code'],
@@ -84,16 +83,16 @@ def process_xlsx_csv(file_path: str) -> pd.DataFrame:
         value_name='Value'
     )
 
-    # -- 5. Extrae las metricas y el año de la columna unica y las separa en dos columnas
-    #       nuevas (Metric y Year)
+    # Extrae las metricas y el año de la columna unica y las separa en dos columnas
+    # nuevas (Metric y Year)
     extracted = df_melt['Original_Column'].str.extract(
         rf'({metrics_pattern}).*?(\d{{4}})',
         flags=re.DOTALL)
     df_melt['Metric'] = extracted[0]
     df_melt['Year'] = extracted[1].astype(int)
 
-    # -- 6. Pivota y cada métrica pasa a ser su propia columna, dejando las columnas de
-    #       NIF Code y Year
+    # Pivota y cada métrica pasa a ser su propia columna, dejando las columnas de
+    # NIF Code y Year
     df_final = df_melt.pivot_table(
         index=['NIF Code', 'Year'],
         columns='Metric',
@@ -104,13 +103,13 @@ def process_xlsx_csv(file_path: str) -> pd.DataFrame:
     # Quita el nombre "Metric" que pivot_table deja en el eje de columnas
     df_final.columns.name = None
 
-    # -- 7. Ordena las filas por NIF Code y Year
+    # Ordena las filas por NIF Code y Year
     df_final = df_final.sort_values(
         by=['NIF Code', 'Year'],
         ascending=[True, False]
     ).reset_index(drop=True)
 
-    # -- 8. Adaptamos los datos y el nombre de las columnas
+    # Adaptamos los datos y el nombre de las columnas
     # Fuerza las columnas con metricas financieras a numero y las que no
     # muestran valores como n.d. a NaN
     value_columns = [c for c in df_final.columns if c not in ['NIF Code', 'Year']]

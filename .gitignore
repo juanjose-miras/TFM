@@ -11,9 +11,12 @@
 
 # Ignoramos absolutamente TODO el contenido de estas carpetas y mantenemos los archivos .gitkeep
 etl/data/unprocessed_files/*
+etl/data/unprocessed_geodata_files/*
 etl/data/processed_files/*
 etl/data/clean_files/*
+etl/data/src/ETLpruebas.ipynb
 !etl/data/unprocessed_files/.gitkeep
+!etl/data/unprocessed_geodata_files/.gitkeep
 !etl/data/processed_files/.gitkeep
 !etl/data/clean_files/.gitkeep
 
