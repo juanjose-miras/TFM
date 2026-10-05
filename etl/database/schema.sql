@@ -75,3 +75,12 @@ CREATE TABLE IF NOT EXISTS staging_finanzas (
     sales NUMERIC(15, 2),
     total_assets NUMERIC(15, 2)
 );
+
+
+CREATE TABLE IF NOT EXISTS processed_file_hash(
+    id SERIAL PRIMARY KEY,
+    file_hash TEXT NOT NULL,
+    file_name TEXT NOT NULL UNIQUE,
+    file_type VARCHAR(25)
+
+)
